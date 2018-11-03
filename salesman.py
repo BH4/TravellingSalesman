@@ -7,11 +7,6 @@ from matplotlib import pyplot as plt
 # population size
 # maximum number of generations
 
-global maxNumberOfGenerations
-maxNumberOfGenerations = 1000
-populationSize = 1000
-printAll = False
-
 
 def distance(p1, p2):
     return (p1[0]-p2[0])**2+(p1[1]-p2[1])**2
@@ -33,7 +28,7 @@ def randIndividual(length):  # individual consists of the order they visit each 
     return ind
 
 
-def mutate(ind):
+def mutate(ind, currGen, maxNumberOfGenerations):
     mutProb = .2*(maxNumberOfGenerations-currGen)/maxNumberOfGenerations
 
     L = len(ind)
@@ -85,7 +80,7 @@ def fillIn(ind, L):
     return ind
 
 
-def breed(ind1, ind2):
+def breed(ind1, ind2, currGen, maxNumberOfGenerations):
     L = len(ind1)
     new = []
 
@@ -110,10 +105,10 @@ def breed(ind1, ind2):
             else:
                 nex = trans2[nex]
 
-    return mutate(new)
+    return mutate(new, currGen, maxNumberOfGenerations)
 
 
-def selection(pop, ans):
+def selection(pop, ans, currGen, maxNumberOfGenerations):
     s = len(pop)
 
     # list of all population paired with fitness
@@ -137,7 +132,7 @@ def selection(pop, ans):
     i = 0
     j = 1
     while totalBabys < (s-keep):
-        newPop.append(breed(newPop[i], newPop[j]))
+        newPop.append(breed(newPop[i], newPop[j], currGen, maxNumberOfGenerations))
         totalBabys += 1
 
         j += 1
@@ -162,8 +157,7 @@ def graph(ind, points):
     x.append(points[ind[0]][0])
     y.append(points[ind[0]][1])
 
-    draw = plt.plot(x, y)
-    return draw
+    plt.plot(x, y)
 
 
 def update(draw, ind, points):
@@ -193,47 +187,41 @@ def genRandPoints(num):
     return p
 
 
-points = genRandPoints(20)
+def run(points, populationSize=1000, maxNumberOfGenerations=1000, printAll=False):
+    """
+    points is an array of points that need to be visited cyclically.
 
-L = len(points)
+    If printAll is True then every time a new best salesman is found it will be
+    graphed.
+    """
+    L = len(points)
 
-pop = []
-for i in range(populationSize):
-    pop.append(randIndividual(L))
+    pop = []
+    for i in range(populationSize):
+        pop.append(randIndividual(L))
 
+    winner = []
+    wfit = -1
 
-winner = []
-wfit = -1
-global currGen
-currGen = 1
+    currGen = 1
 
-if printAll:
-    plt.ion()
-    drawing = graph(randIndividual(L), points)
-    plt.show()
+    if printAll:
+        graph(pop[0], points)
+        plt.show()
+
     while currGen < maxNumberOfGenerations:
-        (pop, best) = selection(pop, points)
+        (pop, best) = selection(pop, points, currGen, maxNumberOfGenerations)
         bestFit = best[0]
 
         if bestFit < wfit or wfit == -1:
             # plt.clear()
             wfit = bestFit
             winner = best[1]
-            update(drawing, winner, points)
-            print("Gen: " + str(currGen) + " | Fitness: " + str(bestFit))
+            print("Gen: {:d} | Fitness: {:d}".format(currGen, bestFit))
 
-        currGen += 1
-
-else:
-
-    while currGen < maxNumberOfGenerations:
-        (pop, best) = selection(pop, points)
-        bestFit = best[0]
-
-        if bestFit < wfit or wfit == -1:
-            wfit = bestFit
-            winner = best[1]
-            print("Gen: " + str(currGen) + " | Fitness: " + str(bestFit))
+            if printAll:
+                graph(winner, points)
+                plt.show()
 
         currGen += 1
 
@@ -241,4 +229,6 @@ else:
     plt.show()
 
 
+cities = genRandPoints(20)
+run(cities, maxNumberOfGenerations=200, printAll=False)
 print("done")
